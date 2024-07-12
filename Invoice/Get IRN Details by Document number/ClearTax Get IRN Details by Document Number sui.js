@@ -110,6 +110,11 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/format', 'N/ur
                 log.debug('response.code', response_irn.code);
                 log.debug('response.body', response_irn.body);
                 
+                loadRecord.setValue({
+                    fieldId: 'custbody_logitax_irn_details_request',
+                    value: JSON.stringify(body_data)
+                });
+                
                 if (response_irn.code == 200) {
                     
                     loadRecord.setValue({
