@@ -2,9 +2,8 @@
 		Company Name 	:	Nuvista Technologies Pvt Ltd
 		Script Name 	:	ClearTax Get E-Invoice PDF ues
 		Author 			:  	NVT Employee 
-		Date            :   11-05-2022 
-		Description		:	1. This Script is created for E-Invoice Print
-							E-Invoice Print is created through this script and it is visible only after Clear Tax IRN generated
+		Date            :   15-07-2024 
+		Description		:	
 ------------------------------------------------------------------------------------------------*/
 /**
 	@NApiVersion 2.1
@@ -34,29 +33,27 @@ define(["N/record", "N/search", "N/ui/serverWidget", 'N/url'], function (record,
 					fieldId: 'custbody_ctax_einvoice_transfer'
 				});
 				//log.debug("ctax_einvoice_transfer_checkbox", ctax_einvoice_transfer_checkbox)
-				var ctax_einvoice_ack_no = record_obj.getValue({
-					fieldId: 'custbody_ctax_einvoice_ack_no'
-				});
+	
 				var ctax_einvoice_irn = record_obj.getValue({
 					fieldId: 'custbody_ctax_einvoice_irn'
 				});
-				var ctax_einvoice_qrcode = record_obj.getValue({
-					fieldId: 'custbody_ctax_einvoice_qrcode'
-				});
-				var ctax_einvoice_printeinvoice = record_obj.getValue({
-					fieldId: 'custbody_ctax_einvoice_printeinvoice'
-				});
-				//log.debug("ctax_einvoice_printeinvoice",ctax_einvoice_printeinvoice)
 				var getInvStatus = record_obj.getValue({
 					fieldId: 'status'
+				});
+				var ctax_einvoice_pdf_url = record_obj.getValue({
+					fieldId: 'custbody_logitax_einvoice_pdf_url'
+				});
+
+				var ctax_print_invoice = record_obj.getValue({
+					fieldId: 'custbody_ctax_einvoice_printeinvoice'
 				});
 
 				if (getInvStatus !== "Voided") {
 
-					if (ctax_einvoice_transfer_checkbox == true && _logValidation(ctax_einvoice_ack_no) && _logValidation(ctax_einvoice_irn) && _logValidation(ctax_einvoice_qrcode) && ctax_einvoice_printeinvoice == "") { // if checkbox is true, einvoice_ack_no, einvoice_irn, einvoice_qrcode and printeinvoice is empty then Button will show
+					if (ctax_einvoice_transfer_checkbox == true && _logValidation(ctax_einvoice_irn) && _logValidation(ctax_einvoice_pdf_url) && !_logValidation(ctax_print_invoice)) { // if checkbox is true, einvoice_irn and printeinvoice is empty then Button will show
 						form.addButton({
-							id: 'custpage_crebuttion',
-							label: 'E-Invoice print',
+							id: 'custpage_print_invoice_btn',
+							label: 'E-Invoice Print',
 							functionName: "callClearTaxInvoice"
 						})
 					}

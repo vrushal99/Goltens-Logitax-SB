@@ -319,6 +319,8 @@ define(['N/search', 'N/record', 'N/ui/serverWidget', 'N/http', 'N/url', 'N/redir
 
                                 var consolidateEwbDate = responseBodyParse[0]["cEwbDate"];
 
+                                var consolidatedEwbPdfUrl = responseBodyParse[0]["pdfcEWBurl"];
+
                                 for (var billcnt = 0; billcnt < selectedInvoiceDataArr.length; billcnt++) {
 
                                     var invoiceRec = record.load({
@@ -345,6 +347,11 @@ define(['N/search', 'N/record', 'N/ui/serverWidget', 'N/http', 'N/url', 'N/redir
                                     invoiceRec.setValue({
                                         fieldId: 'custbody_ctax_con_ewb_date',
                                         value: String(consolidateEwbDate)
+                                    });
+
+                                    invoiceRec.setValue({
+                                        fieldId: 'custbody_logitax_con_ewb_pdf_url',
+                                        value: consolidatedEwbPdfUrl
                                     });
 
                                     var recordId = invoiceRec.save({

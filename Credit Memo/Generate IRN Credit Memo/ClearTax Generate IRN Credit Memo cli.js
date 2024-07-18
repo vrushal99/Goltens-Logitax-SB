@@ -2,10 +2,8 @@
 		Company Name 	:	Nuvista Technologies Pvt Ltd
 		Script Name 	:	ClearTax Generate IRN Credit Memo cli
 		Author 			:  	NVT Employee
-		Date            :   02-05-2024
-		Description		:	1. This Script is generated for creditmemo to ClearTax system
-		                      (This client script invokes through 'e-generation creditmemo' button. Once it is invoked, 
-							   data will be send to Clear tax system. Then after receiving the response, data will be set in the body fields)
+		Date            :   15-07-2024
+		Description		:	
 ------------------------------------------------------------------------------------------------*/
 /**
  *@NApiVersion 2.1

@@ -2,7 +2,7 @@
 		Company Name 	:	Nuvista Technologies Pvt Ltd
 		Script Name 	:	ClearTax Get E-CreditMemo PDF ues
 		Author 			:  	NVT Employee 
-		Date            :   24-05-2022 
+		Date            :   18-07-2024 
 		Description		:	1. This Script is created for E-CreditMemo Print
 		                    E-CreditMemo Print is created through this script and it is visible only after Clear Tax IRN generated
 
@@ -35,25 +35,30 @@ define(["N/record", "N/search", "N/ui/serverWidget", 'N/url'], function(record, 
 						fieldId: 'custbody_ctax_creditnote_transfer'
 					});
 					//log.debug("ctax_einvoice_transfer_checkbox", ctax_einvoice_transfer_checkbox)
-					var ctax_creditnote_ack_no = record_obj.getValue({
-						fieldId: 'custbody_ctax_creditnote_ack_no'
-					});
 					var ctax_creditnote_irn = record_obj.getValue({
 						fieldId: 'custbody_ctax_creditnote_irn'
 					});
-					var ctax_creditnote_qrcode = record_obj.getValue({
-						fieldId: 'custbody_ctax_creditnote_qrcode'
+					var ctax_ecreditn_pdf_url = record_obj.getValue({
+						fieldId: 'custbody_logitax_einvoice_pdf_url'
 					});
 					var ctax_ecreditn_print = record_obj.getValue({
 						fieldId: 'custbody_ctax_ecreditnote_print'
 					});
-					log.debug("ctax_ecreditn_print",ctax_ecreditn_print)
-					if (creditnote_transfer_checkbox == true && _logValidation(ctax_creditnote_ack_no) && _logValidation(ctax_creditnote_irn) && _logValidation(ctax_creditnote_qrcode) && ctax_ecreditn_print == "") {  // if checkbox is true, einvoice_ack_no, einvoice_irn, einvoice_qrcode and printeinvoice is empty then Button will show
-						form.addButton({
-							id: 'custpage_crebuttion',
-							label: 'E-CreditMemo print',
-							functionName: "callTaxCreditMemo"
-						})
+					log.debug("ctax_ecreditn_print", ctax_ecreditn_print)
+					
+					var getCreditStatus = record_obj.getValue({
+						fieldId: 'status'
+					});
+
+					if (getCreditStatus !== "Voided") {
+
+						if (creditnote_transfer_checkbox == true && _logValidation(ctax_creditnote_irn) && _logValidation(ctax_ecreditn_pdf_url) && ctax_ecreditn_print == "") {  // if checkbox is true, einvoice_ack_no, einvoice_irn, einvoice_qrcode and printeinvoice is empty then Button will show
+							form.addButton({
+								id: 'custpage_crebuttion',
+								label: 'E-CreditMemo print',
+								functionName: "callTaxCreditMemo"
+							})
+						}
 					}
 				}
 				form.clientScriptModulePath = './ClearTax Get E-CreditMemo PDF cli.js'; // this path is call to client script		

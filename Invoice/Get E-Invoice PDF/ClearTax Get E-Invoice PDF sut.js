@@ -2,9 +2,8 @@
 		Company Name 	:	Nuvista Technologies Pvt Ltd
 		Script Name 	:	ClearTax Get E-Invoice PDF sut
 		Author 			:  	NVT Employee
-		Date            :   10-05-2022
-		Description		:   1. This Script is created for E-Invoice Print.
-							This script is invoked through E-Invoice print button. Then request is sent for PDF print and we will receive response, so that we can generate PDF.
+		Date            :   15-07-2024
+		Description		:   
 
 ------------------------------------------------------------------------------------------------*/
 /**
@@ -23,93 +22,58 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/format', 'N/ur
 				log.debug("getRecId", getRecId)
 
 				if (nullCheck(getRecId) && nullCheck(getRecType)) {
-					
+
 					var Invoice_obj = record.load({   // return the record obj
 						type: getRecType,
 						id: getRecId,
 						isDynamic: true
 					});
-		
-					var irns = Invoice_obj.getValue({
-						fieldId: 'custbody_ctax_einvoice_irn'
+
+					var ctax_einvoice_pdf_url = Invoice_obj.getValue({
+						fieldId: 'custbody_logitax_einvoice_pdf_url'
 					});
-					log.debug("irns", irns)
-	
-					var subsidiary_obj_gst_no = gstNoFromSubsidiaryOrCompanyInfo(Invoice_obj);
 
-					var accountId = runtime.accountId; // return the accountId
-					var environment = runtime.envType; // PRODUCTION, SANDBOX, etc.
-					log.debug("environment", environment)
-					var Configuration_data = ClearTax_Library_File.ClearTax_Einvoice_library()
-					log.debug("Configuration_data", Configuration_data)
-					var get_environment_name = Configuration_data[environment]
-					log.debug("get_environment_name", get_environment_name)
-					var auth_token = get_environment_name["AUTH_TOKEN"]
-					log.debug("auth_token", auth_token)
-					var print_einvoice_url = get_environment_name["PRINT_E_INVOICE_URL"]
-					log.debug("print_einvoice_url", print_einvoice_url)
-					var printfolderid = get_environment_name["PRINT_EINVOICE_FOLDER_ID"]
-					log.debug("printfolderid", printfolderid)
-					var printTemplate = get_environment_name["IRN_PRINT_TEMPLATE"]
-                    log.debug("printTemplate", printTemplate)
+					if (nullCheck(ctax_einvoice_pdf_url)) {
 
-					//var _url = "http://einvoicing.internal.cleartax.co/v2/eInvoice/download?template=62cfd0a9-d1ed-47b0-b260-fe21f57e9c5e&irns="+irns
+						var accountId = runtime.accountId; // return the accountId
+						var environment = runtime.envType; // PRODUCTION, SANDBOX, etc.
+						// log.debug("environment", environment)
+						var Configuration_data = ClearTax_Library_File.ClearTax_Einvoice_library()
+						// log.debug("Configuration_data", Configuration_data)
+						var get_environment_name = Configuration_data[environment]
+						// log.debug("get_environment_name", get_environment_name)
+						var printfolderid = get_environment_name["PRINT_EINVOICE_FOLDER_ID"]
+						log.debug("printfolderid", printfolderid)
 
-					if (nullCheck(print_einvoice_url) && nullCheck(irns)) {
-						
-						var _url = print_einvoice_url + "template=" + printTemplate + "&irns=" + irns;  // return the url in Dynamicly
-						log.debug("_url", _url);
 						var headerObj = {
-							"X-Cleartax-Auth-Token": auth_token,
-							"gstin": subsidiary_obj_gst_no,
 							"Content-Type": "application/pdf",
-							"accept": "application/pdf"
+							"accept": "application/pdf",
 						}
-						var response = https.get({   // return the response and request
-							url: _url,
+						var response = https.get({
+							url: ctax_einvoice_pdf_url,
 							headers: headerObj
 						});
-						log.debug({
-							title: 'response.code',
-							details: response.code
+
+						var fileContent = response.body;
+						log.debug('fileContent', fileContent);
+
+						var fileObj = file.create({                        // create response to pdf
+							name: 'E-Invoice Print' + getRecId + '.pdf',
+							fileType: file.Type.PDF,
+							contents: fileContent,
 						});
-						log.debug({
-							title: 'response.body',
-							details: response.body
-						});
+						fileObj.encoding = file.Encoding.UTF_8;
+						fileObj.folder = printfolderid;
+						var file_id = fileObj.save();    // save the file in filecabinet 
+						log.debug("file_id", file_id);
 
-						if (response.code == 200) {
+						if (nullCheck(file_id)) {
 
-							var fileObj = file.create({                        // create response to pdf
-								name: 'E-Invoice print' + getRecId + '.pdf',
-								fileType: file.Type.PDF,
-								contents: response.body,
-							});
-							fileObj.encoding = file.Encoding.UTF_8;
-
-
-							// context.response.writeFile({
-							// file: fileObj,
-							// isInline: true
-							// });
-							fileObj.folder = printfolderid;
-							var file_id = fileObj.save();    // save the file in filecabinet 
-							log.debug("file_id", file_id);
-							var paramfileId = false;
-							if (file_id) {
-								paramfileId = true
-								Invoice_obj.setValue({
-									fieldId: 'custbody_ctax_einvoice_printeinvoice',
-									value: file_id
-								});
-							}
-
-						}
-						else {
 							Invoice_obj.setValue({
-								fieldId: 'custbody_ctax_print_einv_res',
-								value: response.body
+								fieldId: 'custbody_ctax_einvoice_printeinvoice',
+								value: file_id
 							});
+
 						}
 						var recordId = Invoice_obj.save({      // return the save record Id
 							enableSourcing: true,
@@ -118,19 +82,15 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/format', 'N/ur
 						log.debug("recordId", recordId);
 
 					}
-					
-					redirect.toRecord({
-						type: getRecType,
-						id: getRecId,
-						parameters: {
-							'custparam_fileId': paramfileId
-						}
-					});
-					
 				}
 
+				redirect.toRecord({
+					type: getRecType,
+					id: getRecId,
+				});
+
 			} catch (ex) {
-				log.debug("error", ex)
+				log.debug("error in onRequest() function", ex.toString());
 
 			}
 		}
@@ -142,59 +102,6 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/format', 'N/ur
 				return false;
 			}
 		}
-
-		function gstNoFromSubsidiaryOrCompanyInfo(invoice_obj) {
-
-            try {
-                
-                var isOneWorldAcct = runtime.isFeatureInEffect({ feature: 'SUBSIDIARIES' });
-                if (isOneWorldAcct == true) {
-
-                    var invoice_obj_subsidiary = invoice_obj.getValue({
-                        fieldId: 'subsidiary'
-                    });
-                    if (nullCheck(invoice_obj_subsidiary)) {
-                        var subsidiary_obj = record.load({
-                            type: "subsidiary",
-                            id: invoice_obj_subsidiary,
-                            isDynamic: true
-                        });
-                        var gst_number = subsidiary_obj.getValue({
-                            fieldId: 'federalidnumber'
-                        });
-                        if (nullCheck(gst_number)) {
-                            gst_number = gst_number;
-                        } else {
-                            gst_number = "";
-                        }
-                        log.debug("gst_number", gst_number);
-                    }
-
-                }
-                else {
-
-                    var subsidiary_obj = config.load({
-                        type: config.Type.COMPANY_INFORMATION
-                    });
-
-                    var gst_number = subsidiary_obj.getValue({
-                        fieldId: 'employerid'
-                    });
-                    if (nullCheck(gst_number)) {
-                        gst_number = gst_number;
-                    } else {
-                        gst_number = "";
-                    }
-                    log.debug("gst_number", gst_number);
-
-                }
-                return gst_number;
-            }
-            catch (e) {
-                
-                log.error('error in gstNoFromSubsidiaryOrCompanyInfo() function', e.toString());
-            }
-        }
 
 		return {
 			onRequest: onRequest

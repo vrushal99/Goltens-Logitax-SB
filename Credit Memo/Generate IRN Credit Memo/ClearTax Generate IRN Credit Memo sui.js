@@ -2,7 +2,7 @@
 	Company Name :  Nuvista Technologies Pvt Ltd
 	Script Name : 	ClearTax Generate IRN Credit Memo sui
 	Author : 		NVT Employee
-	Date : 			02/05/2024
+	Date : 			15-07-2024
 	description : 	
 
 ------------------------------------------------------------------------------------------------*/
@@ -282,7 +282,7 @@ define(['N/search', 'N/config', 'N/record', 'N/ui/serverWidget', 'N/http', 'N/ur
 					isDynamic: true
 				});
 				var customer_obj_gst = customer_obj.getValue({
-					fieldId: 'custentity_indgst_cusven_gstin'
+					fieldId: 'custentity_gstin' //custentity_indgst_cusven_gstin
 				});
 				if (customer_obj_gst) {
 					customer_obj_gst = customer_obj_gst
@@ -805,34 +805,31 @@ define(['N/search', 'N/config', 'N/record', 'N/ui/serverWidget', 'N/http', 'N/ur
 			var auth_token = get_environment_name["AUTH_TOKEN"]
 			//log.debug("auth_token", auth_token)
 			var GENERATE_IRN_URL = get_environment_name["GENERATE_IRN_URL"]
-
-			var url = GENERATE_IRN_URL    // return the url in dynamic
-			// start send data on invoice to cleartax
-			//var url = 'https://api-sandbox.clear.in/einv/v2/eInvoice/generate';  
+			var get_client_code = get_environment_name["CLIENT_CODE"]
+			var get_user_code = get_environment_name["USER_CODE"]
+			var get_password = get_environment_name["PASSWORD"]
+			var url = GENERATE_IRN_URL
 			log.debug("url", url)
-			var headers = {
 
-				//"X-Cleartax-Auth-Token": '1.76072d27-911c-4bd8-b735-9d62cba7cc30_f01ffe1cf997b71ac8113afee72d1ce81a44fa79c133e63f564383865a8abaf8',   // static value
-				"X-Cleartax-Auth-Token": auth_token,   // added on 03/05/2024
-				// "owner_id": '9abeb2db-955c-49c6-99b9-e2589314896b',//08.04.2024 - commented
-				"gstin": subsidiary_obj_gstnum,
-				// "x-cleartax-product": 'EInvoice',//08.04.2024 - commented
+			var headers = {
 				"Content-Type": "application/json",
 				"accept": "application/json"
 			}
-			var body_data = {};
-			body_data = [{
-				"transaction": {
-					"Version": "1.1",
+			var body_data = {
+				"client_code": get_client_code,
+				"user_code": get_user_code,
+				"password": get_password,
+				"json_data": {
+					"Version": "1.1", // hardcode
 					"TranDtls": {
-						"TaxSch": "GST",
+						"TaxSch": "GST", // hardcode
 						"SupTyp": supplytypecode,
 						"RegRev": '',
 						"EcmGstin": null,
 						"IgstOnIntra": ''
 					},
 					"DocDtls": {
-						"Typ": "CRN", // hardcode
+						"Typ": "INV", // hardcode
 						"No": tranid,
 						"Dt": formatteddate
 					},
@@ -857,7 +854,7 @@ define(['N/search', 'N/config', 'N/record', 'N/ui/serverWidget', 'N/http', 'N/ur
 						"Addr2": customer_obj_addr2,
 						"Loc": customer_obj_city,
 						"Pin": customer_obj_zip,
-						"Stcd": state_code_cust, //customer_obj_state, // getting error
+						"Stcd": state_code_cust, //customer_obj_state, 
 						"Ph": customer_obj_phone,
 						"Em": customer_obj_email
 					},
@@ -870,14 +867,14 @@ define(['N/search', 'N/config', 'N/record', 'N/ui/serverWidget', 'N/http', 'N/ur
 						"Stcd": loc_state_code_value,
 					},
 					// "ShipDtls": {
-					// "Gstin": customer_obj_gst,
-					// "LglNm": customer_obj_companyname,
-					// "TrdNm": customername,
-					// "Addr1": shipToAddressLine1,  // getting error
-					// "Addr2": shipToAddressLine2,
-					// "Loc": shipToAddressCity,
-					// "Pin": shipToAddressZip,
-					// "Stcd": state_code_cust, //shipToAddressState 
+					// 	"Gstin": customer_obj_gst,
+					// 	"LglNm": shipToAddressee, //CR:10.06.2024 - commented customer_obj_companyname
+					// 	"TrdNm": customername,
+					// 	"Addr1": shipToAddressLine1,
+					// 	"Addr2": shipToAddressLine2,
+					// 	"Loc": shipToAddressCity,
+					// 	"Pin": shipToAddressZip,
+					// 	"Stcd": shipto_satecode, //shipToAddressState //state_code_cust
 					// },
 					"ShipDtls": {
 						"Gstin": customer_obj_gst,
@@ -939,7 +936,7 @@ define(['N/search', 'N/config', 'N/record', 'N/ui/serverWidget', 'N/http', 'N/ur
 						}]
 					},
 					"AddlDocDtls": [{
-						"Url": "https://einv-apisandbox.nic.in",
+						"Url": "https://einv-apisandbox.nic.in", // hardcode
 						"Docs": '',
 						"Info": ''
 					}],
@@ -962,30 +959,17 @@ define(['N/search', 'N/config', 'N/record', 'N/ui/serverWidget', 'N/http', 'N/ur
 						"TransMode": ''
 					}
 				},
-				"custom_fields": {
-					"customfieldLable1": getFreight || "CustomFieldValue1", // hardcode //27.05.2024 - get freight and pass into request
-					"customfieldLable2": "CustomFieldValue2",
-					"customfieldLable3": "CustomFieldValue3"
-				}
-			}]
-			// end send data on invoice to cleartax
-			log.debug({
-				title: 'bodyResp1',
-				details: JSON.stringify(body_data)
-			});
-			var response_irn = https.put({    // return the request and response
+			};
+			log.debug('request body_data', JSON.stringify(body_data));
+
+			var response_irn = https.post({
 				url: url,
 				body: JSON.stringify(body_data),
 				headers: headers,
 			});
-			log.debug({
-				title: 'response.code',
-				details: response_irn.code
-			});
-			log.debug({
-				title: 'response.body',
-				details: response_irn.body
-			});
+			log.debug('response.code', response_irn.code);
+			log.debug('response.body', response_irn.body);
+
 			loadRecord.setValue({
 				fieldId: 'custbody_ctax_creditnote_response',
 				value: response_irn.body
@@ -995,47 +979,24 @@ define(['N/search', 'N/config', 'N/record', 'N/ui/serverWidget', 'N/http', 'N/ur
 				value: JSON.stringify(body_data)
 			});
 			if (response_irn.code == 200) {   // if response code get 200 then condition will execute
-				var parseObdy = JSON.parse(response_irn.body)
-				var error = parseObdy[0]["govt_response"]["Success"]
-				//log.debug("error", error)
-				if (nullCheck(error) && error == "N")  // if if response code get 200 and success get 'N' then condition will execute
-				{
-					var get_error = parseObdy[0]["govt_response"]["ErrorDetails"][0]["error_message"]
-					log.debug("get_error....", get_error)
-					//	alert(get_error)
+				var IrnResponse = JSON.parse(response_irn.body)
+				log.debug("response", IrnResponse);
+
+				var error = IrnResponse[0]["flag"];
+				log.debug("error", error)
+
+				if (error == false || error == 'false') {
+
+					log.debug('IRN Status:', 'E-Credit Memo IRN is not generated.');
+
 				}
-				else if (nullCheck(error) && error == "Y")  // if if response code get 200 and success get 'Y' then condition will execute
-				{
-					var parseObdy_AckNo = parseObdy[0]["govt_response"]["AckNo"]
-					var parseObdy_SignedQRCode = parseObdy[0]["govt_response"]["SignedQRCode"]
-					var parseObdy_Irn = parseObdy[0]["govt_response"]["Irn"]
-					var parseObdy_Status = parseObdy[0]["govt_response"]["Status"]
-					var parseObdy_AckDt = parseObdy[0]["govt_response"]["AckDt"]
-					// var dateformat = new Date(String(parseObdy_AckDt))
-					// var month = dateformat.getMonth() + 1
-					// var date = dateformat.getDate()
-					// var fyllyear = dateformat.getFullYear()
-					// var hours = dateformat.getHours();
-					// var minutes = dateformat.getMinutes();
-					// if (minutes < 10) {
-					// minutes = "0" + minutes
-					// }
-					// var seconds = dateformat.getSeconds();
-					// if (seconds < 10) {
-					// seconds = "0" + seconds
-					// }
-					// var ampm = hours >= 12 ? 'pm' : 'am';
-					// hours = hours % 12;
-					// hours = hours ? hours : 12; // the hour '0' should be '12'
-					// minutes = minutes < 10 ? '0' + minutes : minutes;
-					// var str_date_Time = month + '/' + date + '/' + fyllyear + ' ' + hours + ':' + minutes + ':' + seconds + ' ' + ampm;
-					//str_date_Time = String(str_date_Time)
-					//log.debug("str_date_Time", str_date_Time)
-					// var formattedTime = format.parse({
-					// value: str_date_Time,
-					// type: format.Type.DATETIMETZ
-					// })
-					//log.debug("formattedTime", formattedTime)
+				else if (error == "true" || error == true) {
+					var parseObdy_AckNo = IrnResponse[0]["AckNo"]
+					var parseObdy_SignedQRCode = IrnResponse[0]["SignedQRCode"]
+					var parseObdy_Irn = IrnResponse[0]["Irn"]
+					// var parseObdy_Status = IrnResponse[0]["Status"]//16.07.2024 - status not coming in response
+					var parseObdy_AckDt = IrnResponse[0]["AckDt"]
+					
 					loadRecord.setValue({
 						fieldId: 'custbody_ctax_creditnote_transfer',
 						value: true
@@ -1052,14 +1013,24 @@ define(['N/search', 'N/config', 'N/record', 'N/ui/serverWidget', 'N/http', 'N/ur
 						fieldId: 'custbody_ctax_creditnote_irn',
 						value: parseObdy_Irn
 					});
-					loadRecord.setValue({
-						fieldId: 'custbody_ctax_ecreditno_status',
-						value: parseObdy_Status
-					});
+					// loadRecord.setValue({
+					// 	fieldId: 'custbody_ctax_ecreditno_status',
+					// 	value: parseObdy_Status
+					// });
 					loadRecord.setValue({
 						fieldId: 'custbody_ctax_creditnote_ack_date',
 						value: String(parseObdy_AckDt)
 					});
+
+					var IrnResponse_inv_pdf_url = IrnResponse[0]["PDFEInvurl"];
+
+						if (nullCheck(IrnResponse_inv_pdf_url)) {
+
+							loadRecord.setValue({
+								fieldId: 'custbody_logitax_einvoice_pdf_url',
+								value: String(IrnResponse_inv_pdf_url)
+							});
+						}
 				}
 			}
 
@@ -1294,73 +1265,73 @@ define(['N/search', 'N/config', 'N/record', 'N/ui/serverWidget', 'N/http', 'N/ur
 		}
 	}
 
-			//Begin: subsidiarySearchObj functionality	-- add on 17-06-2022
-			function subsidiarySearchObj(subsidiaryId) {
-				var subsidiary_obj_addr1 = "";
-				var subsidiary_obj_addr2 = "";
-				var subsidiary_obj_city = "";
-				var subsidiary_obj_zip = "";
-				var subsidiary_obj_addrphone = "";
-				var obj = {};
-				var subsidiarySearchObj = search.create({
-					type: "subsidiary",
-					filters:
-						[
-							["isinactive", "is", "F"],
-							"AND",
-							["internalid", "anyof", subsidiaryId]
-						],
-					columns:
-						[
-							search.createColumn({ name: "address1", label: "Address 1" }),
-							search.createColumn({ name: "address2", label: "Address 2" }),
-							search.createColumn({ name: "city", label: "City" }),
-							search.createColumn({ name: "zip", label: "Zip" }),
-							search.createColumn({ name: "phone", label: "Phone" })
-						]
-				});
-				var searchResultCount = subsidiarySearchObj.runPaged().count;
-				log.debug("subsidiarySearchObj result count", searchResultCount);
-				subsidiarySearchObj.run().each(function (result) {
-					subsidiary_obj_addr1 = result.getValue("address1")
-					subsidiary_obj_addr2 = result.getValue("address2")
-					subsidiary_obj_city = result.getValue("city")
-					subsidiary_obj_zip = result.getValue("zip")
-					subsidiary_obj_addrphone = result.getValue("phone")
-					return true;
-				});
-				obj.subsidiary_obj_addr1 = subsidiary_obj_addr1;
-				obj.subsidiary_obj_addr2 = subsidiary_obj_addr2;
-				obj.subsidiary_obj_city = subsidiary_obj_city;
-				obj.subsidiary_obj_zip = subsidiary_obj_zip;
-				obj.subsidiary_obj_addrphone = subsidiary_obj_addrphone;
-				return obj;
-			}
-			//Begin: subsidiarySearchObj functionality
-	
-			function subsidiarySearchObjCompanyInfo(subsidiary_obj) {
-	
-				var addressDetails = subsidiary_obj.getSubrecord({
-					fieldId: 'mainaddress'
-				});
-	
-				var subsidiary_obj_addr1 = addressDetails.getValue("addr1");
-				var subsidiary_obj_addr2 = addressDetails.getValue("addr2");
-				var subsidiary_obj_city = addressDetails.getValue("city");
-				var subsidiary_obj_zip = addressDetails.getValue("zip");
-				var subsidiary_obj_addrphone = addressDetails.getValue("phone");
-	
-				var obj = {
-					subsidiary_obj_addr1: subsidiary_obj_addr1,
-					subsidiary_obj_addr2: subsidiary_obj_addr2,
-					subsidiary_obj_city: subsidiary_obj_city,
-					subsidiary_obj_zip: subsidiary_obj_zip,
-					subsidiary_obj_addrphone: subsidiary_obj_addrphone,
-				};
-	
-				log.debug('company info address', obj);
-				return obj;
-			}
+	//Begin: subsidiarySearchObj functionality	-- add on 17-06-2022
+	function subsidiarySearchObj(subsidiaryId) {
+		var subsidiary_obj_addr1 = "";
+		var subsidiary_obj_addr2 = "";
+		var subsidiary_obj_city = "";
+		var subsidiary_obj_zip = "";
+		var subsidiary_obj_addrphone = "";
+		var obj = {};
+		var subsidiarySearchObj = search.create({
+			type: "subsidiary",
+			filters:
+				[
+					["isinactive", "is", "F"],
+					"AND",
+					["internalid", "anyof", subsidiaryId]
+				],
+			columns:
+				[
+					search.createColumn({ name: "address1", label: "Address 1" }),
+					search.createColumn({ name: "address2", label: "Address 2" }),
+					search.createColumn({ name: "city", label: "City" }),
+					search.createColumn({ name: "zip", label: "Zip" }),
+					search.createColumn({ name: "phone", label: "Phone" })
+				]
+		});
+		var searchResultCount = subsidiarySearchObj.runPaged().count;
+		log.debug("subsidiarySearchObj result count", searchResultCount);
+		subsidiarySearchObj.run().each(function (result) {
+			subsidiary_obj_addr1 = result.getValue("address1")
+			subsidiary_obj_addr2 = result.getValue("address2")
+			subsidiary_obj_city = result.getValue("city")
+			subsidiary_obj_zip = result.getValue("zip")
+			subsidiary_obj_addrphone = result.getValue("phone")
+			return true;
+		});
+		obj.subsidiary_obj_addr1 = subsidiary_obj_addr1;
+		obj.subsidiary_obj_addr2 = subsidiary_obj_addr2;
+		obj.subsidiary_obj_city = subsidiary_obj_city;
+		obj.subsidiary_obj_zip = subsidiary_obj_zip;
+		obj.subsidiary_obj_addrphone = subsidiary_obj_addrphone;
+		return obj;
+	}
+	//Begin: subsidiarySearchObj functionality
+
+	function subsidiarySearchObjCompanyInfo(subsidiary_obj) {
+
+		var addressDetails = subsidiary_obj.getSubrecord({
+			fieldId: 'mainaddress'
+		});
+
+		var subsidiary_obj_addr1 = addressDetails.getValue("addr1");
+		var subsidiary_obj_addr2 = addressDetails.getValue("addr2");
+		var subsidiary_obj_city = addressDetails.getValue("city");
+		var subsidiary_obj_zip = addressDetails.getValue("zip");
+		var subsidiary_obj_addrphone = addressDetails.getValue("phone");
+
+		var obj = {
+			subsidiary_obj_addr1: subsidiary_obj_addr1,
+			subsidiary_obj_addr2: subsidiary_obj_addr2,
+			subsidiary_obj_city: subsidiary_obj_city,
+			subsidiary_obj_zip: subsidiary_obj_zip,
+			subsidiary_obj_addrphone: subsidiary_obj_addrphone,
+		};
+
+		log.debug('company info address', obj);
+		return obj;
+	}
 
 	return {
 		onRequest: onRequest

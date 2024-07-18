@@ -29,11 +29,11 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/format', 'N/ur
                 var docType = '';
 
                 if (getRecType == 'invoice') {
-                    
+
                     docType = 'INV';
                 }
                 else if (getRecType == 'creditmemo') {
-                    
+
                     docType = 'CRN';
 
                 }
@@ -45,23 +45,23 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/format', 'N/ur
                 var ctax_einvoice_irn = loadRecord.getValue({
                     fieldId: 'custbody_ctax_einvoice_irn'
                 });
-                
+
                 var trandate = loadRecord.getValue({
-					fieldId: 'trandate'
+                    fieldId: 'trandate'
                 });
-                
+
                 var month = trandate.getMonth() + 1
-				if (month < 10) {
-					month = "0" + month
-				}
-				var date = trandate.getDate()
-				if (date < 10) {
-					date = "0" + date
-				}
-				var formatteddate = date + '/' + month + '/' + trandate.getFullYear()
-				//log.debug("formatteddate", formatteddate)
-				formatteddate = String(formatteddate).trim();
-				// formatteddate = xml.escape({xmlText : formatteddate});
+                if (month < 10) {
+                    month = "0" + month
+                }
+                var date = trandate.getDate()
+                if (date < 10) {
+                    date = "0" + date
+                }
+                var formatteddate = date + '/' + month + '/' + trandate.getFullYear()
+                //log.debug("formatteddate", formatteddate)
+                formatteddate = String(formatteddate).trim();
+                // formatteddate = xml.escape({xmlText : formatteddate});
 
                 var subsidiary_obj_gstnum = gstNoFromSubsidiaryOrCompanyInfo(loadRecord);
 
@@ -109,25 +109,16 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/format', 'N/ur
 
                 log.debug('response.code', response_irn.code);
                 log.debug('response.body', response_irn.body);
-                
+
                 loadRecord.setValue({
                     fieldId: 'custbody_logitax_irn_details_request',
                     value: JSON.stringify(body_data)
                 });
-                
-                if (response_irn.code == 200) {
-                    
-                    loadRecord.setValue({
-                        fieldId: 'custbody_ctax_geteinvoice_url',
-                        value: response_irn.body
-                    });
-                } else {
-                    loadRecord.setValue({
-                        fieldId: 'custbody_ctax_get_einv_res',
-                        value: response_irn.body
-                    });
 
-                }
+                loadRecord.setValue({
+                    fieldId: 'custbody_ctax_geteinvoice_url',
+                    value: response_irn.body
+                });
 
                 var recordId = loadRecord.save({
                     enableSourcing: true,

@@ -2,7 +2,7 @@
 		Company Name 	:	Nuvista Technologies Pvt Ltd
 		Script Name 	:	ClearTax Get E-CreditMemo PDF cli
 		Author 			:  	NVT Employee 
-		Date            :   24-05-2022
+		Date            :   18-07-2024
 		Description		:  1. This Script is created for E-CreditMemo Print
 		                    (When E-CreditMemo print button is triggered, script is invoked to display a message "Wait for sometime, system is Processing")
 
@@ -38,8 +38,6 @@ define(["N/record", "N/currentRecord", "N/format", 'N/search', 'N/ui/message', '
 	//Begin: pageInit functionality
 	function pageInit(scriptContext) {
 		try {
-			var fileId = getNS_url_param('custparam_fileId', window.location.href);
-			alert(fileId)
 
 		} catch (ex) {
 			alert(JSON.stringify(ex))
@@ -50,19 +48,6 @@ define(["N/record", "N/currentRecord", "N/format", 'N/search', 'N/ui/message', '
 		pageInit: pageInit,
 		callTaxCreditMemo: callTaxCreditMemo
 	}
-	
-    //Begin: getNS_url_param functionality
-	function getNS_url_param(name, url) {
-		name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
-		var regexS = "[\\?&]" + name + "=([^&#]*)";
-		var regex = new RegExp(regexS);
-		var results = regex.exec(url);
-		if (results == null)
-			return "";
-		else
-			return results[1];
-	}
-    //End: getNS_url_param functionality
 	
 	//Begin: nullCheck functionality
 	function nullCheck(value) {

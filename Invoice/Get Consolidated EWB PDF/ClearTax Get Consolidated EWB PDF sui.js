@@ -2,7 +2,7 @@
 		Company Name 	:	Nuvista Technologies Pvt Ltd
 		Script Name 	:	ClearTax Get Consolidated EWB PDF sui
 		Author 			:  	NVT Employee
-		Date            :   15/04/2024
+		Date            :   18-07-2024
 		Description		:   You can print a consolidated EWB by sending a GET request to E-Invoicing API.
 
 ------------------------------------------------------------------------------------------------*/
@@ -36,8 +36,9 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/format', 'N/ur
 					var ewaybill_inv_consolidatednum_arr = ewaybill_consolidated_pdf_search(ctax_ewaybill_consolidated_num);
 				}
 
-
-				var subsidiary_obj_gst_no = gstNoFromSubsidiaryOrCompanyInfo(Invoice_obj);
+				var ctax_ewaybill_consolidated_pdf_url = Invoice_obj.getValue({
+					fieldId: 'custbody_logitax_con_ewb_pdf_url'
+				});
 
 				var accountId = runtime.accountId; // return the accountId
 				var environment = runtime.envType; // PRODUCTION, SANDBOX, etc.
@@ -46,101 +47,42 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/format', 'N/ur
 				// log.debug("Configuration_data", Configuration_data)
 				var get_environment_name = Configuration_data[environment]
 				// log.debug("get_environment_name", get_environment_name)
-				var auth_token = get_environment_name["AUTH_TOKEN"]
-				// log.debug("auth_token", auth_token)
 				var printfolderid = get_environment_name["PRINT_EWAYBILL_FOLDER_ID"]
 				// log.debug("printfolderid", printfolderid)
-				var consolidatedEwbPDFURL = get_environment_name["GET_CONSOLIDATED_EWB_PDF_URL"]
 
-
-				var _url = consolidatedEwbPDFURL + ctax_ewaybill_consolidated_num; // return the url in Dynamicly
-				// log.debug("_url", _url)
 				var headerObj = {
-					"X-Cleartax-Auth-Token": auth_token,
-					"gstin": subsidiary_obj_gst_no,
 					"Content-Type": "application/pdf",
+					"accept": "application/pdf",
 				}
 				var response = https.get({ // return the response and request
-					url: _url,
+					url: ctax_ewaybill_consolidated_pdf_url,
 					headers: headerObj
 				});
-				// log.debug({
-				// title: 'response.code',
-				// details: response.code
-				// });
-				log.debug({
-					title: 'response.body',
-					details: response.body
+
+				log.debug('response.body', response.body);
+
+				var hexEncodedString = encode.convert({
+					string: response.body,
+					inputEncoding: encode.Encoding.UTF_8,
+					outputEncoding: encode.Encoding.BASE_64
 				});
-				if (response.code == 200) {
 
-					var fileObj = file.create({ // create response to pdf
-						name: 'E-Waybill Consolidated print' + getRecId + '.pdf',
-						fileType: file.Type.PDF,
-						contents: response.body,
-					});
-					fileObj.encoding = file.Encoding.UTF_8;
+				var fileObj = file.create({ // create response to pdf
+					name: 'E-Waybill Consolidated print' + getRecId + '.pdf',
+					fileType: file.Type.PDF,
+					contents: hexEncodedString,
+				});
+				fileObj.encoding = file.Encoding.UTF_8;
 
-					fileObj.folder = printfolderid;
-					var file_id = fileObj.save(); // save the file in filecabinet 
-					// log.debug("file_id", file_id);
-					var paramfileId = false;
+				fileObj.folder = printfolderid;
+				var file_id = fileObj.save(); // save the file in filecabinet 
+				// log.debug("file_id", file_id);
 
-					if (file_id) {
+				if (file_id) {
 
-						paramfileId = true
-						Invoice_obj.setValue({
-							fieldId: 'custbody_ctax_store_con_pdf',
-							value: file_id
-						});
-
-						var recordId = Invoice_obj.save({ // return the save record Id
-							enableSourcing: true,
-							ignoreMandatoryFields: true
-						});
-						// log.debug("recordId", recordId);
-
-						if (nullCheck(ewaybill_inv_consolidatednum_arr)) {
-
-							// log.debug('ewaybill_inv_consolidatednum_arr', ewaybill_inv_consolidatednum_arr);
-
-							for (var arrcnt = 0; arrcnt < ewaybill_inv_consolidatednum_arr.length; arrcnt++) {
-
-								var invInternalId = ewaybill_inv_consolidatednum_arr[arrcnt].invoiceId;
-
-								var consolidatedPDFStore = ewaybill_inv_consolidatednum_arr[arrcnt].consolidatedPdf;
-
-								if (!nullCheck(consolidatedPDFStore)) {
-
-									if (invInternalId != getRecId) { //except current invoice it will update for another invoices
-
-										// log.debug("invInternalId in condition", invInternalId);
-
-										var Invoice_Rec = record.load({
-											type: 'invoice',
-											id: parseInt(invInternalId),
-											isDynamic: true
-										});
-
-										Invoice_Rec.setValue({
-											fieldId: 'custbody_ctax_store_con_pdf',
-											value: file_id
-										});
-
-										var recordId = Invoice_Rec.save({
-											enableSourcing: true,
-											ignoreMandatoryFields: true
-										});
-
-									}
-								}
-							}
-						}
-					}
-				} else {
 					Invoice_obj.setValue({
-						fieldId: 'custbody_ctax_conso_pdf_res',
-						value: response.body
+						fieldId: 'custbody_ctax_store_con_pdf',
+						value: file_id
 					});
 
 					var recordId = Invoice_obj.save({ // return the save record Id
@@ -148,14 +90,48 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/format', 'N/ur
 						ignoreMandatoryFields: true
 					});
 					// log.debug("recordId", recordId);
+
+					if (nullCheck(ewaybill_inv_consolidatednum_arr)) {
+
+						// log.debug('ewaybill_inv_consolidatednum_arr', ewaybill_inv_consolidatednum_arr);
+
+						for (var arrcnt = 0; arrcnt < ewaybill_inv_consolidatednum_arr.length; arrcnt++) {
+
+							var invInternalId = ewaybill_inv_consolidatednum_arr[arrcnt].invoiceId;
+
+							var consolidatedPDFStore = ewaybill_inv_consolidatednum_arr[arrcnt].consolidatedPdf;
+
+							if (!nullCheck(consolidatedPDFStore)) {
+
+								if (invInternalId != getRecId) { //except current invoice it will update for another invoices
+
+									// log.debug("invInternalId in condition", invInternalId);
+
+									var Invoice_Rec = record.load({
+										type: 'invoice',
+										id: parseInt(invInternalId),
+										isDynamic: true
+									});
+
+									Invoice_Rec.setValue({
+										fieldId: 'custbody_ctax_store_con_pdf',
+										value: file_id
+									});
+
+									var recordId = Invoice_Rec.save({
+										enableSourcing: true,
+										ignoreMandatoryFields: true
+									});
+
+								}
+							}
+						}
+					}
 				}
 
 				redirect.toRecord({
 					type: getRecType,
 					id: getRecId,
-					parameters: {
-						'custparam_fileId': paramfileId
-					}
 				});
 
 
@@ -241,59 +217,6 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/format', 'N/ur
 			return searchResults;
 		}
 
-		function gstNoFromSubsidiaryOrCompanyInfo(Invoice_obj) {
-
-            try {
-                
-                var isOneWorldAcct = runtime.isFeatureInEffect({ feature: 'SUBSIDIARIES' });
-                if (isOneWorldAcct == true) {
-
-                    var invoice_obj_subsidiary = Invoice_obj.getValue({
-                        fieldId: 'subsidiary'
-                    });
-                    if (nullCheck(invoice_obj_subsidiary)) {
-                        var subsidiary_obj = record.load({
-                            type: "subsidiary",
-                            id: invoice_obj_subsidiary,
-                            isDynamic: true
-                        });
-                        var gst_number = subsidiary_obj.getValue({
-                            fieldId: 'federalidnumber'
-                        });
-                        if (nullCheck(gst_number)) {
-                            gst_number = gst_number;
-                        } else {
-                            gst_number = "";
-                        }
-                        log.debug("gst_number", gst_number);
-                    }
-
-                }
-                else {
-
-                    var subsidiary_obj = config.load({
-                        type: config.Type.COMPANY_INFORMATION
-                    });
-
-                    var gst_number = subsidiary_obj.getValue({
-                        fieldId: 'employerid'
-                    });
-                    if (nullCheck(gst_number)) {
-                        gst_number = gst_number;
-                    } else {
-                        gst_number = "";
-                    }
-                    log.debug("gst_number", gst_number);
-
-                }
-                return gst_number;
-            }
-            catch (e) {
-                
-                log.error('error in gstNoFromSubsidiaryOrCompanyInfo() function', e.toString());
-            }
-		}
-		
 		return {
 			onRequest: onRequest
 		}

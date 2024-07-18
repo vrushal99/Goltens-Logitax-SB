@@ -329,6 +329,15 @@ define(['N/search', 'N/config', 'N/record', 'N/ui/serverWidget', 'N/http', 'N/ur
                                 });
                             }
 
+                            var ewb_pdf_url = parseObdy[0]["detailedpdfUrl"];
+
+                            if (nullCheck(ewb_pdf_url)) {
+
+                                loadRecord.setValue({
+                                    fieldId: 'custbody_logitax_eway_bill_pdf_url',
+                                    value: ewb_pdf_url
+                                });
+                            }
                         }
                     }
                 }

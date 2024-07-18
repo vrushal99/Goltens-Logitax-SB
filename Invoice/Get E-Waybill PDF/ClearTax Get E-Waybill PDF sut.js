@@ -2,9 +2,8 @@
         Company Name 	:	Nuvista Technologies Pvt Ltd
         Script Name 	:	ClearTax Get E-Invoice PDF sut
         Author 			:  	NVT Employee
-        Date            :   10-05-2022
-        Description		:   1. This Script is created for E-Invoice Print.
-                            This script is invoked through E-Invoice print button. Then request is sent for PDF print and we will receive response, so that we can generate PDF.
+        Date            :   16-07-2024
+        Description		:   
 
 ------------------------------------------------------------------------------------------------*/
 /**
@@ -13,8 +12,8 @@
  * @NModuleScope SameAccount
  */
 // START SUITELET FUNCTION  =====================================================================
-define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/format', 'N/url', 'N/config', 'N/xml', 'N/render', 'N/record', 'N/https', 'N/redirect', 'N/runtime', './ClearTax Library File.js'],
-    function (serverWidget, search, file, encode, format, url, config, xmlobj, render, record, https, redirect, runtime, ClearTax_Library_File) {
+define(['N/ui/serverWidget', 'N/render', 'N/search', 'N/file', 'N/encode', 'N/format', 'N/url', 'N/config', 'N/xml', 'N/render', 'N/record', 'N/https', 'N/redirect', 'N/runtime', './ClearTax Library File.js'],
+    function (serverWidget, render, search, file, encode, format, url, config, xmlobj, render, record, https, redirect, runtime, ClearTax_Library_File) {
         function onRequest(context) {
             try {
                 var getRecType = context.request.parameters.custpage_recType; // return the record type
@@ -29,21 +28,10 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/format', 'N/ur
                         id: getRecId,
                         isDynamic: true
                     });
-        
-                    var irns = Invoice_obj.getValue({
-                        fieldId: 'custbody_ctax_ewaybill_irn'
-                    });
-                    var ewb_number = Invoice_obj.getValue({
-                        fieldId: 'custbody_ctax_ewb_number'
-                    });
-                    var print_type = Invoice_obj.getText({
-                        fieldId: 'custbody_ctax_ewb_get_pdf'
-                    });
 
-                    log.debug("irns", irns)
-
-                  
-                    var subsidiary_obj_gst_no = gstNoFromSubsidiaryOrCompanyInfo(Invoice_obj);
+                    var ctax_ewb_pdf_url = Invoice_obj.getValue({
+                        fieldId: 'custbody_logitax_eway_bill_pdf_url'
+                    });
 
                     var accountId = runtime.accountId; // return the accountId
                     var environment = runtime.envType; // PRODUCTION, SANDBOX, etc.
@@ -51,81 +39,52 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/format', 'N/ur
                     var Configuration_data = ClearTax_Library_File.ClearTax_Einvoice_library()
                     //log.debug("Configuration_data", Configuration_data)
                     var get_environment_name = Configuration_data[environment]
-                    log.debug("get_environment_name", get_environment_name)
-                    var auth_token = get_environment_name["AUTH_TOKEN"]
-                    //log.debug("auth_token", auth_token)
-                    var print_ewaybill_url = get_environment_name["EWAYBILL_URL"]
-                    //log.debug("print_ewaybill_url", print_ewaybill_url)
+                    // log.debug("get_environment_name", get_environment_name)
                     var printfolderid = get_environment_name["PRINT_EWAYBILL_FOLDER_ID"]
-                    log.debug("printfolderid", printfolderid)
+                    // log.debug("printfolderid", printfolderid)
 
-                    //var _url = "http://einvoicing.internal.cleartax.co/v2/eInvoice/download?template=62cfd0a9-d1ed-47b0-b260-fe21f57e9c5e&irns="+irns
+                    if (nullCheck(ctax_ewb_pdf_url)) {
 
-                    if (nullCheck(print_ewaybill_url)) {
+                        // ctax_ewb_pdf_url = 'https://uat.logitax.in/GP/CP?id=41464447388461';
 
-                        var _url = print_ewaybill_url + "/print?format=PDF";
-                        log.debug("_url", _url);
                         var headerObj = {
-                            "X-Cleartax-Auth-Token": auth_token,
-                            "gstin": subsidiary_obj_gst_no,
-                            "Content-Type": "application/json"
+                            "Content-Type": "application/pdf",
+                            "accept": "application/pdf",
                         }
-                        var bodyData = {
-                            "ewb_numbers": [
-                                ewb_number
-                            ],
-                            "print_type": print_type
-                        }
-                        // var requestBody = JSON.stringify(bodyData);
-                        // log.debug("requestBody", requestBody)
-                        var response = https.post({ // return the response and request
-                            url: _url,
-                            headers: headerObj,
-                            body: JSON.stringify(bodyData)
-                        });
-                        log.debug("response::::::::", JSON.stringify(response));
-                        log.debug({
-                            title: 'response.body eway',
-                            details: response.body
+
+                        var response = https.get({
+                            url: ctax_ewb_pdf_url,
+                            headers: headerObj
                         });
 
-                        if (response.code == 200) {
+                        log.debug('response.body eway', response.body);
 
-                            var fileObj = file.create({ // create response to pdf
-                                name: 'E-Waybill Print' + getRecId + '.pdf',
-                                fileType: file.Type.PDF,
-                                contents: response.body,
-                            });
-                            fileObj.encoding = file.Encoding.UTF_8;
-                            // context.response.writeFile({
-                            // file: fileObj,
-                            // isInline: true
-                            // });
-                            fileObj.folder = printfolderid;
-                            var file_id = fileObj.save(); // save the file in filecabinet 
-                            log.debug("file_id eway", file_id);
-                            var paramfileId = false;
-                            if (file_id) {
-                                paramfileId = true
-                                Invoice_obj.setValue({
-                                    fieldId: 'custbody_ctax_print_ewaybill',
-                                    value: file_id
-                                });
-                                // var recordId = Invoice_obj.save({ // return the save record Id
-                                // enableSourcing: true,
-                                // ignoreMandatoryFields: true
-                                // });
-                                // log.debug("recordId", recordId);
-                            }
+                        var hexEncodedString = encode.convert({
+                            string: response.body,
+                            inputEncoding: encode.Encoding.UTF_8,
+                            outputEncoding: encode.Encoding.BASE_64
+                        });
+                        log.debug("hexEncodedString", hexEncodedString);
 
-                        }
-                        else {
+                        var fileObj = file.create({ // create response to pdf
+                            name: 'E-Waybill Print' + getRecId + '.pdf',
+                            fileType: file.Type.PDF,
+                            contents: hexEncodedString,
+                            isOnline: true
+                        });
+
+                        // fileObj.encoding = file.Encoding.BASE_64;
+                        fileObj.folder = printfolderid;
+                        var file_id = fileObj.save(); // save the file in filecabinet 
+                        log.debug("file_id eway", file_id);
+
+
+                        if (file_id) {
                             Invoice_obj.setValue({
-                                fieldId: 'custbody_ctax_print_ewb_res',
-                                value: response.body
+                                fieldId: 'custbody_ctax_print_ewaybill',
+                                value: file_id
                             });
                         }
-
                     }
 
                     var recordId = Invoice_obj.save({ // return the save record Id
@@ -137,14 +96,11 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/format', 'N/ur
                     redirect.toRecord({
                         type: getRecType,
                         id: getRecId,
-                        parameters: {
-                            'custparam_fileId': paramfileId
-                        }
                     });
 
                 }
             } catch (ex) {
-                log.debug("error", ex)
+                log.debug("error in onRequest() function", ex.toString());
 
             }
         }
@@ -156,59 +112,12 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/format', 'N/ur
             }
         }
 
-        function gstNoFromSubsidiaryOrCompanyInfo(invoice_obj) {
-
-            try {
-                
-                var isOneWorldAcct = runtime.isFeatureInEffect({ feature: 'SUBSIDIARIES' });
-                if (isOneWorldAcct == true) {
-
-                    var invoice_obj_subsidiary = invoice_obj.getValue({
-                        fieldId: 'subsidiary'
-                    });
-                    if (nullCheck(invoice_obj_subsidiary)) {
-                        var subsidiary_obj = record.load({
-                            type: "subsidiary",
-                            id: invoice_obj_subsidiary,
-                            isDynamic: true
-                        });
-                        var gst_number = subsidiary_obj.getValue({
-                            fieldId: 'federalidnumber'
-                        });
-                        if (nullCheck(gst_number)) {
-                            gst_number = gst_number;
-                        } else {
-                            gst_number = "";
-                        }
-                        log.debug("gst_number", gst_number);
-                    }
-
-                }
-                else {
-
-                    var subsidiary_obj = config.load({
-                        type: config.Type.COMPANY_INFORMATION
-                    });
-
-                    var gst_number = subsidiary_obj.getValue({
-                        fieldId: 'employerid'
-                    });
-                    if (nullCheck(gst_number)) {
-                        gst_number = gst_number;
-                    } else {
-                        gst_number = "";
-                    }
-                    log.debug("gst_number", gst_number);
-
-                }
-                return gst_number;
-            }
-            catch (e) {
-                
-                log.error('error in gstNoFromSubsidiaryOrCompanyInfo() function', e.toString());
-            }
+        function base64UrlDecode(base64Url) {
+            base64Url = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            var decodedData = atob(base64Url);
+            return decodedData;
         }
-        
+
         return {
             onRequest: onRequest
         }

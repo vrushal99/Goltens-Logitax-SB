@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------------------------
         Company Name 	:	Nuvista Technologies Pvt Ltd
-        Script Name 	:	ClearTax Get E-Invoice By IRN sui
+        Script Name 	:	ClearTax Get E-Invoice By IRN CM sui
         Author 			:  	NVT Employee
-        Date            :   01-07-2024
+        Date            :   17-07-2024
         Description		:   
 
 ------------------------------------------------------------------------------------------------*/
@@ -27,7 +27,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/format', 'N/ur
                 });
 
                 var ctax_einvoice_irn = loadRecord.getValue({
-                    fieldId: 'custbody_ctax_einvoice_irn'
+                    fieldId: 'custbody_ctax_creditnote_irn'
                 });
 
                 var subsidiary_obj_gstnum = gstNoFromSubsidiaryOrCompanyInfo(loadRecord);
@@ -70,14 +70,8 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/format', 'N/ur
                     headers: headers,
                 });
 
-                log.debug({
-                    title: 'response.code',
-                    details: response_irn.code
-                });
-                log.debug({
-                    title: 'response.body',
-                    details: response_irn.body
-                });
+                log.debug('response.code', response_irn.code);
+                log.debug('response.body', response_irn.body);
 
                 loadRecord.setValue({
                     fieldId: 'custbody_logitax_irn_details_request',

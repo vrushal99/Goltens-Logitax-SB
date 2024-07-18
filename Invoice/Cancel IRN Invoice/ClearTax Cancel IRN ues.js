@@ -234,12 +234,7 @@ define(['N/record', 'N/file', 'N/config', 'N/xml', 'N/search', 'N/render', 'N/fo
                     log.debug("get_environment_name", get_environment_name)
                     var cancel_irn_url = get_environment_name["CANCEL_IRN_URL"]
                     log.debug("cancel_irn_url", cancel_irn_url)
-                    // var print_einvoice_url = get_environment_name["PRINT_E_INVOICE_URL"]
-                    // log.debug("print_einvoice_url", print_einvoice_url)
-                    // var printfolderid = get_environment_name["PRINT_EINVOICE_FOLDER_ID"]
-                    // log.debug("printfolderid", printfolderid)
-                    // var printTemplate = get_environment_name["IRN_PRINT_TEMPLATE"]
-                    // log.debug("printTemplate", printTemplate)
+             
                     var get_client_code = get_environment_name["CLIENT_CODE"]
                     var get_user_code = get_environment_name["USER_CODE"]
                     var get_password = get_environment_name["PASSWORD"]

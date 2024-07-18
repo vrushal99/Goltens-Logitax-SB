@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------------------------
 		Company Name 	:	Nuvista Technologies Pvt Ltd
-		Script Name 	:	
+		Script Name 	:	ClearTax Get E-Waybill PDF ues
 		Author 			:  	NVT Employee 
-		Date            :   11-05-2022 
+		Date            :   16-07-2024 
 		Description		:	
 ------------------------------------------------------------------------------------------------*/
 /**
@@ -33,37 +33,29 @@ define(["N/record", "N/search", "N/ui/serverWidget", 'N/url'], function (record,
 				var ctax_ewaybill_transfer_checkbox = record_obj.getValue({
 					fieldId: 'custbody_ctax_ewaybill_transfer'
 				});
-				log.debug("ctax_ewaybill_transfer_checkbox", ctax_ewaybill_transfer_checkbox)
-				var ctax_ewaybill_ack_no = record_obj.getValue({
+				// log.debug("ctax_ewaybill_transfer_checkbox", ctax_ewaybill_transfer_checkbox)
+				var ctax_ewaybill_number = record_obj.getValue({
 					fieldId: 'custbody_ctax_ewb_number'
 				});
-				log.debug("ctax_ewaybill_ack_no", ctax_ewaybill_ack_no)
-				var ctax_ewaybill_irn = record_obj.getValue({
-					fieldId: 'custbody_ctax_ewaybill_irn'
-				});
-				log.debug("ctax_ewaybill_irn", ctax_ewaybill_irn)
-				/*var ctax_ewaybill_qrcode = record_obj.getValue({
-					fieldId: 'custbody_ctax_einvoice_qrcode'
-				});*/
-				/*	var ctax_ewaybill_printewaybill = record_obj.getValue({
-						fieldId: 'custbody__ctax_print_ewaybill'
-					});*/
-				//log.debug("ctax_ewaybill_printewaybill",ctax_ewaybill_printewaybill)
+				// log.debug("ctax_ewaybill_number", ctax_ewaybill_number)
 				var getInvStatus = record_obj.getValue({
 					fieldId: 'status'
 				});
 
+				var ctax_ewb_pdf_url = record_obj.getValue({
+					fieldId: 'custbody_logitax_eway_bill_pdf_url'
+				});
+
 				if (getInvStatus !== "Voided") {
 
-					if (ctax_ewaybill_transfer_checkbox == true && _logValidation(ctax_ewaybill_ack_no) && _logValidation(ctax_ewaybill_irn)) { // if checkbox is true, einvoice_ack_no, einvoice_irn, einvoice_qrcode and printeinvoice is empty then Button will show
+					if (ctax_ewaybill_transfer_checkbox == true && _logValidation(ctax_ewaybill_number) && _logValidation(ctax_ewb_pdf_url)) { // if checkbox is true, ewaybill number and ewaybill pdf url is not empty then Button will show
 						form.addButton({
 							id: 'custpage_crebuttion',
-							label: 'E-Waybill print',
+							label: 'E-Waybill Print',
 							functionName: "callClearTaxWaybill"
 						})
 					}
 				}
-				//form.clientScriptFileId = 5953
 				form.clientScriptModulePath = './ClearTax Get E-Waybill PDF cli.js';  // this path is call to client script
 			}
 

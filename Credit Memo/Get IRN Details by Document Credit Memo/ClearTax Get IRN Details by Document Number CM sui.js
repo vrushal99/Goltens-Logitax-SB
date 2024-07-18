@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------------------------
         Company Name 	:	Nuvista Technologies Pvt Ltd
-        Script Name 	:	ClearTax Get E-Invoice By IRN sui
+        Script Name 	:	ClearTax Get IRN Details Doc Num CM sui
         Author 			:  	NVT Employee
-        Date            :   01-07-2024
+        Date            :   17-07-2024
         Description		:   
 
 ------------------------------------------------------------------------------------------------*/
@@ -26,9 +26,38 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/format', 'N/ur
                     isDynamic: true
                 });
 
-                var ctax_einvoice_irn = loadRecord.getValue({
-                    fieldId: 'custbody_ctax_einvoice_irn'
+                var docType = '';
+
+                if (getRecType == 'invoice') {
+
+                    docType = 'INV';
+                }
+                else if (getRecType == 'creditmemo') {
+
+                    docType = 'CRN';
+
+                }
+
+                var invoice_document_num = loadRecord.getValue({
+                    fieldId: 'tranid'
                 });
+
+                var trandate = loadRecord.getValue({
+                    fieldId: 'trandate'
+                });
+
+                var month = trandate.getMonth() + 1
+                if (month < 10) {
+                    month = "0" + month
+                }
+                var date = trandate.getDate()
+                if (date < 10) {
+                    date = "0" + date
+                }
+                var formatteddate = date + '/' + month + '/' + trandate.getFullYear()
+                //log.debug("formatteddate", formatteddate)
+                formatteddate = String(formatteddate).trim();
+                // formatteddate = xml.escape({xmlText : formatteddate});
 
                 var subsidiary_obj_gstnum = gstNoFromSubsidiaryOrCompanyInfo(loadRecord);
 
@@ -39,13 +68,13 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/format', 'N/ur
                 log.debug("Configuration_data", Configuration_data)
                 var get_environment_name = Configuration_data[environment]
                 log.debug("get_environment_name", get_environment_name)
-                var get_invoice_url = get_environment_name["GET_INVOICE_URL"]
-                log.debug("get_invoice_url", get_invoice_url)
+                var get_irn_by_doc_num_url = get_environment_name["GET_IRN_BY_DOC_NUM_URL"]
+                log.debug("get_irn_by_doc_num_url", get_irn_by_doc_num_url)
                 var get_client_code = get_environment_name["CLIENT_CODE"]
                 var get_user_code = get_environment_name["USER_CODE"]
                 var get_password = get_environment_name["PASSWORD"]
 
-                var url = get_invoice_url;
+                var url = get_irn_by_doc_num_url;
                 //log.debug("url", url)
                 var headers = {
                     "Content-Type": "application/json",
@@ -57,12 +86,16 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/format', 'N/ur
                     "CLIENTCODE": get_client_code,
                     "PASSWORD": get_password,
                     "RequestorGSTIN": subsidiary_obj_gstnum,
-                    "irnlist": [
+                    "docdetailslist": [
                         {
-                            "irn": ctax_einvoice_irn
+                            "DocType": "INV",//17.07.2024 - passing 'CRN' as per documentation but not getting response.
+                            "DocNum": invoice_document_num,
+                            "DocDate": formatteddate
                         }
                     ]
                 }
+
+                log.debug('body_data', body_data);
 
                 var response_irn = https.post({
                     url: url,
@@ -70,14 +103,8 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/format', 'N/ur
                     headers: headers,
                 });
 
-                log.debug({
-                    title: 'response.code',
-                    details: response_irn.code
-                });
-                log.debug({
-                    title: 'response.body',
-                    details: response_irn.body
-                });
+                log.debug('response.code', response_irn.code);
+                log.debug('response.body', response_irn.body);
 
                 loadRecord.setValue({
                     fieldId: 'custbody_logitax_irn_details_request',
@@ -88,7 +115,6 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/format', 'N/ur
                     fieldId: 'custbody_ctax_geteinvoice_url',
                     value: response_irn.body
                 });
-
 
                 var recordId = loadRecord.save({
                     enableSourcing: true,

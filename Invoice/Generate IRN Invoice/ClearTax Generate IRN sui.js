@@ -830,7 +830,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/format', 'N/ur
 					"Content-Type": "application/json", // static value
 					"accept": "application/json", // static value
 				}
-				
+
 				var body_data = {
 					"client_code": get_client_code,
 					"user_code": get_user_code,
@@ -968,15 +968,15 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/format', 'N/ur
 				};
 
 				log.debug('request body_data', JSON.stringify(body_data));
-			
+
 				var response_irn = https.post({
 					url: url,
 					body: JSON.stringify(body_data),
 					headers: headers,
 				});
-				log.debug('response.code',response_irn.code);
+				log.debug('response.code', response_irn.code);
 				log.debug('response.body', response_irn.body);
-				
+
 				loadRecord.setValue({
 					fieldId: 'custbody_ctax_einvoice_response',
 					value: response_irn.body
@@ -1007,7 +1007,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/format', 'N/ur
 						// var IrnResponse_Status = IrnResponse[0]["Status"] //03.07.2024 - status not coming in response
 						var IrnResponse_AckDt = IrnResponse[0]["AckDt"]
 						log.debug("IrnResponse_AckDt", IrnResponse_AckDt)
-					
+
 						loadRecord.setValue({
 							fieldId: 'custbody_ctax_einvoice_transfer',
 							value: true
@@ -1033,6 +1033,15 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/format', 'N/ur
 							value: String(IrnResponse_AckDt)
 						});
 
+						var IrnResponse_inv_pdf_url = IrnResponse[0]["PDFEInvurl"];
+
+						if (nullCheck(IrnResponse_inv_pdf_url)) {
+
+							loadRecord.setValue({
+								fieldId: 'custbody_logitax_einvoice_pdf_url',
+								value: String(IrnResponse_inv_pdf_url)
+							});
+						}
 					}
 				}
 

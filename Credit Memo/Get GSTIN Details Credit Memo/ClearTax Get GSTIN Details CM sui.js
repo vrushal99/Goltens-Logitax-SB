@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------------------------
         Company Name 	:	Nuvista Technologies Pvt Ltd
-        Script Name 	:	ClearTax Get E-Invoice By IRN sui
+        Script Name 	:	ClearTax Get GSTIN Details CM sui
         Author 			:  	NVT Employee
-        Date            :   01-07-2024
+        Date            :   17-07-2024
         Description		:   
 
 ------------------------------------------------------------------------------------------------*/
@@ -26,10 +26,6 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/format', 'N/ur
                     isDynamic: true
                 });
 
-                var ctax_einvoice_irn = loadRecord.getValue({
-                    fieldId: 'custbody_ctax_einvoice_irn'
-                });
-
                 var subsidiary_obj_gstnum = gstNoFromSubsidiaryOrCompanyInfo(loadRecord);
 
                 var accountId = runtime.accountId; // return the accountId
@@ -39,14 +35,15 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/format', 'N/ur
                 log.debug("Configuration_data", Configuration_data)
                 var get_environment_name = Configuration_data[environment]
                 log.debug("get_environment_name", get_environment_name)
-                var get_invoice_url = get_environment_name["GET_INVOICE_URL"]
-                log.debug("get_invoice_url", get_invoice_url)
+                var get_gstin_details_url = get_environment_name["GET_GSTIN_DETAILS_URL"]
+                log.debug("get_gstin_details_url", get_gstin_details_url)
                 var get_client_code = get_environment_name["CLIENT_CODE"]
                 var get_user_code = get_environment_name["USER_CODE"]
                 var get_password = get_environment_name["PASSWORD"]
 
-                var url = get_invoice_url;
-                //log.debug("url", url)
+                var url = get_gstin_details_url;
+                log.debug("url", url)
+
                 var headers = {
                     "Content-Type": "application/json",
                     "accept": "application/json",
@@ -57,12 +54,19 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/format', 'N/ur
                     "CLIENTCODE": get_client_code,
                     "PASSWORD": get_password,
                     "RequestorGSTIN": subsidiary_obj_gstnum,
-                    "irnlist": [
+                    "gstinlist": [
                         {
-                            "irn": ctax_einvoice_irn
+                            "GSTIN": subsidiary_obj_gstnum
                         }
                     ]
                 }
+
+                log.debug('body_data', JSON.stringify(body_data));
+
+                loadRecord.setValue({
+                    fieldId: 'custbody_logitax_gstin_details',
+                    value: JSON.stringify(body_data)
+                });
 
                 var response_irn = https.post({
                     url: url,
@@ -70,22 +74,12 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/format', 'N/ur
                     headers: headers,
                 });
 
-                log.debug({
-                    title: 'response.code',
-                    details: response_irn.code
-                });
-                log.debug({
-                    title: 'response.body',
-                    details: response_irn.body
-                });
+                log.debug('response.code', response_irn.code);
+                log.debug('response.body', response_irn.body);
+
 
                 loadRecord.setValue({
-                    fieldId: 'custbody_logitax_irn_details_request',
-                    value: JSON.stringify(body_data)
-                });
-
-                loadRecord.setValue({
-                    fieldId: 'custbody_ctax_geteinvoice_url',
+                    fieldId: 'custbody_logitax_gstin_response',
                     value: response_irn.body
                 });
 

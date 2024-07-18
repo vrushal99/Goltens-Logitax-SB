@@ -1130,6 +1130,15 @@ define(['N/record', 'N/config', 'N/search', 'N/http', 'N/xml', 'N/runtime', 'N/u
 
                     //end:Ewbdetl:25/04/2024 - storing ewaybill details
 
+                    var IrnResponse_inv_ewb_pdf_url = IrnResponse[0]["PDFEInvurl"];
+
+						if (nullCheck(IrnResponse_inv_ewb_pdf_url)) {
+
+							loadRecord.setValue({
+								fieldId: 'custbody_logitax_einvoice_pdf_url',
+								value: String(IrnResponse_inv_ewb_pdf_url)
+							});
+						}
                 }
             }
             // End Invoice to ClearTax process

@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------------------------
         Company Name 	:	Nuvista Technologies Pvt Ltd
-        Script Name 	:	ClearTax Get E-Invoice By IRN sui
+        Script Name 	:	ClearTax Get HSN Details CM sui
         Author 			:  	NVT Employee
-        Date            :   01-07-2024
+        Date            :   17-07-2024
         Description		:   
 
 ------------------------------------------------------------------------------------------------*/
@@ -26,27 +26,60 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/format', 'N/ur
                     isDynamic: true
                 });
 
-                var ctax_einvoice_irn = loadRecord.getValue({
-                    fieldId: 'custbody_ctax_einvoice_irn'
+                var subsidiary_obj_gstnum = gstNoFromSubsidiaryOrCompanyInfo(loadRecord);
+
+
+                var getItemSubCnt = loadRecord.getLineCount({
+                    sublistId: 'item'
                 });
 
-                var subsidiary_obj_gstnum = gstNoFromSubsidiaryOrCompanyInfo(loadRecord);
+                var hsnCodeArr = [];
+
+                for (var itemcnt = 0; itemcnt < getItemSubCnt; itemcnt++) {
+
+                    var itemHsnCodeRecId = loadRecord.getSublistValue({
+                        sublistId: 'item',
+                        fieldId: 'custcol_indgst_bill_hsnsaccode',
+                        line: itemcnt
+                    });
+
+                    if (nullCheck(itemHsnCodeRecId)) {
+
+                        var hsnLookup = search.lookupFields({
+                            type: 'customrecord_indgst_indiataxhsnandsaccod',
+                            id: itemHsnCodeRecId,
+                            columns: ['custrecord_indgst_indtaxhsnsac_hsnsacode']
+                        });
+                        log.debug('hsnLookup', hsnLookup);
+
+                        var getHsnCode = hsnLookup.custrecord_indgst_indtaxhsnsac_hsnsacode;
+
+                        if (nullCheck(getHsnCode)) {
+
+                            hsnCodeArr.push({
+                                "HSN": getHsnCode
+                            })
+                        }
+                    }
+                }
+
 
                 var accountId = runtime.accountId; // return the accountId
                 var environment = runtime.envType; // PRODUCTION, SANDBOX, etc.
-                log.debug("environment", environment)
+                // log.debug("environment", environment)
                 var Configuration_data = ClearTax_Library_File.ClearTax_Einvoice_library()
-                log.debug("Configuration_data", Configuration_data)
+                // log.debug("Configuration_data", Configuration_data)
                 var get_environment_name = Configuration_data[environment]
-                log.debug("get_environment_name", get_environment_name)
-                var get_invoice_url = get_environment_name["GET_INVOICE_URL"]
-                log.debug("get_invoice_url", get_invoice_url)
+                // log.debug("get_environment_name", get_environment_name)
+                var get_hsn_details_url = get_environment_name["GET_HSN_DETAILS_URL"]
+                log.debug("get_hsn_details_url", get_hsn_details_url)
                 var get_client_code = get_environment_name["CLIENT_CODE"]
                 var get_user_code = get_environment_name["USER_CODE"]
                 var get_password = get_environment_name["PASSWORD"]
 
-                var url = get_invoice_url;
-                //log.debug("url", url)
+                var url = get_hsn_details_url;
+                // log.debug("url", url)
+
                 var headers = {
                     "Content-Type": "application/json",
                     "accept": "application/json",
@@ -57,12 +90,15 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/format', 'N/ur
                     "CLIENTCODE": get_client_code,
                     "PASSWORD": get_password,
                     "RequestorGSTIN": subsidiary_obj_gstnum,
-                    "irnlist": [
-                        {
-                            "irn": ctax_einvoice_irn
-                        }
-                    ]
+                    "hsnlist": hsnCodeArr
                 }
+
+                log.debug('body_data', JSON.stringify(body_data));
+
+                loadRecord.setValue({
+                    fieldId: 'custbody_logitax_hsn_request',
+                    value: JSON.stringify(body_data)
+                });
 
                 var response_irn = https.post({
                     url: url,
@@ -70,22 +106,12 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/format', 'N/ur
                     headers: headers,
                 });
 
-                log.debug({
-                    title: 'response.code',
-                    details: response_irn.code
-                });
-                log.debug({
-                    title: 'response.body',
-                    details: response_irn.body
-                });
+                log.debug('response.code', response_irn.code);
+                log.debug('response.body', response_irn.body);
+
 
                 loadRecord.setValue({
-                    fieldId: 'custbody_logitax_irn_details_request',
-                    value: JSON.stringify(body_data)
-                });
-
-                loadRecord.setValue({
-                    fieldId: 'custbody_ctax_geteinvoice_url',
+                    fieldId: 'custbody_logitax_hsn_response',
                     value: response_irn.body
                 });
 

@@ -2,16 +2,15 @@
 		Company Name 	:	Nuvista Technologies Pvt Ltd
 		Script Name 	:	ClearTax Get E-Waybill PDF cli
 		Author 			:  	NVT Employee 
-		Date            :   11-05-2022
-		Description		:   1. This Script is created for E-Invoice Print
-		                    (When E-Invoice print button is triggered, script is invoked to display a message "Wait for sometime, system is Processing")
+		Date            :   16-07-2024
+		Description		:   
 
 ------------------------------------------------------------------------------------------------*/
 /**
 	@NApiVersion 2.1
 	@NScriptType ClientScript
 */
-define(["N/record", "N/currentRecord", "N/format", 'N/search', 'N/ui/message', 'N/url'], function(record, currentRecord, format, search, message, url) {
+define(["N/record", "N/currentRecord", "N/format", 'N/search', 'N/ui/message', 'N/url'], function (record, currentRecord, format, search, message, url) {
 	//Begin: callClearTaxWaybill functionality
 	function callClearTaxWaybill() {
 		try {
@@ -27,7 +26,7 @@ define(["N/record", "N/currentRecord", "N/format", 'N/search', 'N/ui/message', '
 			var s_sut_url = url.resolveScript({   // call suitelet script
 				scriptId: "customscript_cleartax_get_ewaybillpdfsut",
 				deploymentId: "customdeploy_cleartax_get_ewaybillpdfsut"
-			    });
+			});
 			s_sut_url += '&custpage_recId=' + recordId + '&custpage_recType=' + recordType;
 			window.open(s_sut_url, "_self")  // reload the same page
 
@@ -36,13 +35,11 @@ define(["N/record", "N/currentRecord", "N/format", 'N/search', 'N/ui/message', '
 			alert(ex)
 		}
 	}
-    //End: callClearTaxWaybill functionality 
-	
+	//End: callClearTaxWaybill functionality 
+
 	//Begin: pageInit functionality
 	function pageInit(scriptContext) {
 		try {
-		 var fileId = getNS_url_param('custparam_fileId', window.location.href);
-		 // alert(fileId)
 
 		} catch (ex) {
 			alert(JSON.stringify(ex))
@@ -52,21 +49,10 @@ define(["N/record", "N/currentRecord", "N/format", 'N/search', 'N/ui/message', '
 		pageInit: pageInit,
 		callClearTaxWaybill: callClearTaxWaybill
 	}
-    	//End: pageInit functionality
-		
-	//Begin: getNS_url_param functionality
-	function getNS_url_param(name, url) {
-		name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
-		var regexS = "[\\?&]" + name + "=([^&#]*)";
-		var regex = new RegExp(regexS);
-		var results = regex.exec(url);
-		if (results == null)
-			return "";
-		else
-			return results[1];
-	}
- 
-    //End: getNS_url_param functionality
+	//End: pageInit functionality
+
+
+	//End: getNS_url_param functionality
 	function nullCheck(value) {
 		if (value != null && value != '' && value != undefined)
 			return true;

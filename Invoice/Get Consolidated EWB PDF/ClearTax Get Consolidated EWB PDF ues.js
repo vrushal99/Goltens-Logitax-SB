@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------------------------
 		Company Name 	:	Nuvista Technologies Pvt Ltd
-		Script Name 	:	
+		Script Name 	:	ClearTax Get Consolidated EWB PDF ues
 		Author 			:  	NVT Employee 
-		Date            :   
+		Date            :   18-07-2024
 		Description		:	
 ------------------------------------------------------------------------------------------------*/
 /**
@@ -38,13 +38,17 @@ define(["N/record", "N/search", "N/ui/serverWidget", 'N/url'], function (record,
 					fieldId: 'custbody_ctax_store_con_pdf'
 				});
 
+				var ctax_ewaybill_consolidated_pdf_url = record_obj.getValue({
+					fieldId: 'custbody_logitax_con_ewb_pdf_url'
+				});
+
 				var getInvStatus = record_obj.getValue({
 					fieldId: 'status'
 				});
 
 				if (getInvStatus !== "Voided") {
 
-					if (_logValidation(ctax_ewaybill_consolidated_num) && !_logValidation(ctax_ewaybill_consolidated_pdf)) {
+					if (_logValidation(ctax_ewaybill_consolidated_num) && _logValidation(ctax_ewaybill_consolidated_pdf_url) && !_logValidation(ctax_ewaybill_consolidated_pdf)) {
 						form.addButton({
 							id: 'custpage_consolidated_ewb_no',
 							label: 'Get Consolidated EWB PDF',

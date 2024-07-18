@@ -2,7 +2,7 @@
         Company Name 	:	Nuvista Technologies Pvt Ltd
         Script Name 	:	ClearTax Get E-CreditMemo PDF sut
         Author 			:  	NVT Employee
-        Date            :   24-05-2022
+        Date            :   18-07-2024
         Description		:   1. This Script is created for E-CreditMemo Print.
                             This script is invoked through E-CreditMemo print button. Then request is sent for PDF print and we will receive response, so that we can generate PDF.
 
@@ -27,80 +27,52 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/format', 'N/ur
                     id: getRecId,
                     isDynamic: true
                 });
-                var irns = creditmemo_obj.getValue({
-                    fieldId: 'custbody_ctax_creditnote_irn'
+
+                var ctax_ecredit_pdf_url = creditmemo_obj.getValue({
+                    fieldId: 'custbody_logitax_einvoice_pdf_url'
                 });
-                log.debug("irns", irns)
 
-                var subsidiary_obj_gst_no = gstNoFromSubsidiaryOrCompanyInfo(creditmemo_obj);
+                if (nullCheck(ctax_ecredit_pdf_url)) {
 
-                var accountId = runtime.accountId; // return the accountId
-                var environment = runtime.envType; // PRODUCTION, SANDBOX, etc.
-                log.debug("environment", environment)
-                var Configuration_data = ClearTax_Library_File.ClearTax_Einvoice_library()
-                log.debug("Configuration_data", Configuration_data)
-                var get_environment_name = Configuration_data[environment]
-                log.debug("get_environment_name", get_environment_name)
-                var auth_token = get_environment_name["AUTH_TOKEN"]
-                log.debug("auth_token", auth_token)
-                var print_einvoice_url = get_environment_name["PRINT_E_INVOICE_URL"]
-                log.debug("print_einvoice_url", print_einvoice_url)
-                var printfolderid = get_environment_name["PRINT_EINVOICE_FOLDER_ID"]
-                log.debug("printfolderid", printfolderid)
-                var printTemplate = get_environment_name["IRN_PRINT_TEMPLATE"]
-                log.debug("printTemplate", printTemplate)
+                    var accountId = runtime.accountId; // return the accountId
+                    var environment = runtime.envType; // PRODUCTION, SANDBOX, etc.
+                    log.debug("environment", environment)
+                    var Configuration_data = ClearTax_Library_File.ClearTax_Einvoice_library()
+                    log.debug("Configuration_data", Configuration_data)
+                    var get_environment_name = Configuration_data[environment]
+                    log.debug("get_environment_name", get_environment_name)
+                    var printfolderid = get_environment_name["PRINT_EINVOICE_FOLDER_ID"]
+                    log.debug("printfolderid", printfolderid)
 
-                //var _url = "http://einvoicing.internal.cleartax.co/v2/eInvoice/download?irns=" + irns
-                if (nullCheck(print_einvoice_url) && nullCheck(irns)) {
-
-                    var _url = print_einvoice_url + "template=" + printTemplate + "&irns=" + irns; // return the url in Dynamicly
-                    log.debug("_url", _url)
                     var headerObj = {
-                        "X-Cleartax-Auth-Token": auth_token,
-                        "gstin": subsidiary_obj_gst_no,
                         "Content-Type": "application/pdf",
-                        "accept": "application/pdf"
+                        "accept": "application/pdf",
                     }
-                    var response = https.get({ // return the response and request
-                        url: _url,
+                    var response = https.get({
+                        url: ctax_ecredit_pdf_url,
                         headers: headerObj
                     });
-                    log.debug({
-                        title: 'response.code',
-                        details: response.code
-                    });
-                    log.debug({
-                        title: 'response.body',
-                        details: response.body
-                    });
-                    if (response.code == 200) {
-                        var fileObj = file.create({ // create response to pdf
-                            name: 'E-CreditMemo print' + getRecId + '.pdf',
-                            fileType: file.Type.PDF,
-                            contents: response.body,
-                        });
-                        fileObj.encoding = file.Encoding.UTF_8;
-                        // context.response.writeFile({
-                        // file: fileObj,
-                        // isInline: true
-                        // });
-                        fileObj.folder = printfolderid;
-                        var file_id = fileObj.save(); // save the file in filecabinet
-                        log.debug("file_id", file_id);
-                        var paramfileId = false;
-                        if (file_id) {
-                            paramfileId = true
-                            creditmemo_obj.setValue({
-                                fieldId: 'custbody_ctax_ecreditnote_print',
-                                value: file_id
-                            });
 
-                        }
-                    } else {
+                    var fileContent = response.body;
+                    log.debug('fileContent', fileContent);
+
+                    var fileObj = file.create({                        // create response to pdf
+                        name: 'E-CreditMemo print' + getRecId + '.pdf',
+                        fileType: file.Type.PDF,
+                        contents: fileContent,
+                    });
+                    fileObj.encoding = file.Encoding.UTF_8;
+                    fileObj.folder = printfolderid;
+                    var file_id = fileObj.save();    // save the file in filecabinet 
+                    log.debug("file_id", file_id);
+
+                    if (nullCheck(file_id)) {
+
                         creditmemo_obj.setValue({
-                            fieldId: 'custbody_ctax_print_einv_res',
-                            value: response.body
+                            fieldId: 'custbody_ctax_ecreditnote_print',
+                            value: file_id
                         });
+
                     }
                     var recordId = creditmemo_obj.save({ // return the save record Id
                         enableSourcing: true,
@@ -112,12 +84,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/format', 'N/ur
                 redirect.toRecord({
                     type: getRecType,
                     id: getRecId,
-                    parameters: {
-                        'custparam_fileId': paramfileId
-                    }
                 });
-
-
 
             } catch (ex) {
                 log.debug("error", ex)
@@ -135,59 +102,6 @@ define(['N/ui/serverWidget', 'N/search', 'N/file', 'N/encode', 'N/format', 'N/ur
             }
         }
         //End: _logValidation functionality
-
-        function gstNoFromSubsidiaryOrCompanyInfo(invoice_obj) {
-
-            try {
-                
-                var isOneWorldAcct = runtime.isFeatureInEffect({ feature: 'SUBSIDIARIES' });
-                if (isOneWorldAcct == true) {
-
-                    var invoice_obj_subsidiary = invoice_obj.getValue({
-                        fieldId: 'subsidiary'
-                    });
-                    if (nullCheck(invoice_obj_subsidiary)) {
-                        var subsidiary_obj = record.load({
-                            type: "subsidiary",
-                            id: invoice_obj_subsidiary,
-                            isDynamic: true
-                        });
-                        var gst_number = subsidiary_obj.getValue({
-                            fieldId: 'federalidnumber'
-                        });
-                        if (nullCheck(gst_number)) {
-                            gst_number = gst_number;
-                        } else {
-                            gst_number = "";
-                        }
-                        log.debug("gst_number", gst_number);
-                    }
-
-                }
-                else {
-
-                    var subsidiary_obj = config.load({
-                        type: config.Type.COMPANY_INFORMATION
-                    });
-
-                    var gst_number = subsidiary_obj.getValue({
-                        fieldId: 'employerid'
-                    });
-                    if (nullCheck(gst_number)) {
-                        gst_number = gst_number;
-                    } else {
-                        gst_number = "";
-                    }
-                    log.debug("gst_number", gst_number);
-
-                }
-                return gst_number;
-            }
-            catch (e) {
-                
-                log.error('error in gstNoFromSubsidiaryOrCompanyInfo() function', e.toString());
-            }
-        }
 
         return {
             onRequest: onRequest
